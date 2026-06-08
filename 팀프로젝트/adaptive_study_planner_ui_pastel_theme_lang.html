@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adaptive Study Planner</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --surface: #ffffff;
+      --surface-soft: #fbfcff;
+      --line: #e6eaf2;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #4f46e5;
+      --primary-soft: #eef0ff;
+      --danger: #e55b5b;
+      --danger-soft: #fff0f0;
+      --warning: #d89a22;
+      --warning-soft: #fff6df;
+      --success: #1f9d63;
+      --success-soft: #ecfaf2;
+      --shadow: 0 14px 36px rgba(15, 23, 42, 0.06);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+    }
+
+    html[data-theme="dark"] {
+      --bg: #111827;
+      --surface: #182132;
+      --surface-soft: #1f2937;
+      --line: #344155;
+      --text: #f3f4f6;
+      --muted: #a9b4c7;
+      --primary: #a5b4fc;
+      --primary-soft: rgba(165, 180, 252, 0.16);
+      --danger: #fca5a5;
+      --danger-soft: rgba(252, 165, 165, 0.14);
+      --warning: #facc15;
+      --warning-soft: rgba(250, 204, 21, 0.14);
+      --success: #86efac;
+      --success-soft: rgba(134, 239, 172, 0.14);
+      --shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(79, 70, 229, 0.10), transparent 28%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .page {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      margin-bottom: 24px;
+      padding: 28px;
+      background: linear-gradient(135deg, var(--surface), var(--surface-soft));
+    }
+
+    .app-title {
+      margin: 0;
+      color: var(--primary);
+      font-size: clamp(34px, 5.5vw, 60px);
+      line-height: 1.04;
+      letter-spacing: 0.01em;
+      font-weight: 950;
+    }
+
+    .subtitle {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      max-width: 760px;
+    }
+
+    .top-controls {
+      flex-shrink: 0;
+      display: grid;
+      gap: 10px;
+      min-width: 300px;
+    }
+
+    .mode-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .day-nav {
+      display: grid;
+      grid-template-columns: auto minmax(180px, auto) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 18px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .day-btn,
+    .icon-btn,
+    .pill-btn,
+    .primary-btn,
+    .ghost-btn,
+    .toggle-btn,
+    .today-nav-btn {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 900;
+      transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+    }
+
+    .day-btn:hover,
+    .icon-btn:hover,
+    .pill-btn:hover,
+    .ghost-btn:hover,
+    .toggle-btn:hover {
+      border-color: rgba(79, 70, 229, 0.32);
+      background: var(--primary-soft);
+      color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .day-btn { padding: 10px 12px; font-size: 12px; white-space: nowrap; }
+    .toggle-btn { padding: 11px 12px; font-size: 12px; }
+
+    .selected-date {
+      text-align: center;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+      padding: 0 4px;
+    }
+
+    .today-nav-btn {
+      grid-column: 1 / -1;
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid rgba(79, 70, 229, 0.18);
+      font-size: 12px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .metric-card { padding: 18px; min-height: 118px; }
+
+    .metric-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .metric-value {
+      margin-top: 12px;
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .metric-help { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+    .dot { width: 10px; height: 10px; border-radius: 999px; background: var(--primary); box-shadow: 0 0 0 5px var(--primary-soft); }
+    .dot.success { background: var(--success); box-shadow: 0 0 0 5px var(--success-soft); }
+    .dot.warning { background: var(--warning); box-shadow: 0 0 0 5px var(--warning-soft); }
+    .dot.danger { background: var(--danger); box-shadow: 0 0 0 5px var(--danger-soft); }
+
+    .calendar-card { padding: 20px; margin-bottom: 20px; }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .section-title { margin: 0; font-size: 22px; letter-spacing: -0.03em; }
+    .section-caption { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+    .calendar-nav { display: flex; align-items: center; gap: 8px; }
+    .icon-btn { width: 36px; height: 36px; display: grid; place-items: center; font-size: 18px; }
+    .month-label { min-width: 148px; text-align: center; font-size: 15px; font-weight: 900; }
+
+    .selected-day-summary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin: -4px 0 16px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .selected-day-summary strong { color: var(--text); font-size: 14px; }
+
+    .calendar-weekdays,
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+    .calendar-weekdays { margin-bottom: 10px; }
+    .weekday { text-align: center; color: var(--muted); font-size: 12px; font-weight: 800; padding: 6px 0; }
+
+    .day-cell {
+      min-height: 128px;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+      color: var(--text);
+      width: 100%;
+    }
+    .day-cell:hover { border-color: rgba(79, 70, 229, 0.32); background: var(--surface); box-shadow: var(--shadow); transform: translateY(-1px); }
+    .day-cell.muted { opacity: 0.45; background: var(--surface-soft); }
+    .day-cell.today { border-color: rgba(79, 70, 229, 0.42); box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.22); }
+    .day-cell.selected { border-color: var(--primary); box-shadow: inset 0 0 0 2px rgba(79, 70, 229, 0.28), 0 12px 28px rgba(79, 70, 229, 0.10); }
+
+    .day-number { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 14px; font-weight: 900; }
+    .today-chip { padding: 3px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 11px; font-weight: 900; }
+
+    .badge-stack { display: grid; gap: 6px; margin-top: auto; }
+    .mini-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+      max-width: 100%;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border: 1px solid transparent;
+    }
+    .mini-badge.primary { background: var(--primary-soft); color: var(--primary); }
+    .mini-badge.success { background: var(--success-soft); color: var(--success); }
+    .mini-badge.warning { background: var(--warning-soft); color: #9a6700; }
+    .mini-badge.danger { background: var(--danger-soft); color: #b43838; }
+    .mini-badge.gray { background: var(--surface-soft); color: var(--muted); border-color: var(--line); }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(230px, 0.55fr) minmax(0, 1.45fr) minmax(320px, 0.85fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel { padding: 20px; }
+    .subject-panel { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow: auto; }
+    .subject-board { display: grid; gap: 10px; }
+
+    .subject-card,
+    .priority-card,
+    .task-row,
+    .focus-block {
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+
+    .subject-card {
+      width: 100%;
+      border-radius: 18px;
+      padding: 14px;
+      text-align: left;
+      transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .subject-card:hover { border-color: rgba(79, 70, 229, 0.28); transform: translateY(-1px); box-shadow: var(--shadow); }
+    .subject-card.active { border-color: var(--primary); box-shadow: inset 0 0 0 2px rgba(79, 70, 229, 0.20); }
+
+    .subject-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .subject-name { font-size: 14px; font-weight: 900; letter-spacing: -0.02em; }
+    .subject-count { padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.55); color: var(--text); font-size: 11px; font-weight: 900; white-space: nowrap; }
+    html[data-theme="dark"] .subject-count { background: rgba(17,24,39,0.38); }
+    .subject-stat { color: var(--muted); font-size: 12px; line-height: 1.45; margin-bottom: 10px; }
+    .subject-preview { display: grid; gap: 5px; }
+    .subject-preview-item { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .priority-reason { margin: 8px 0 10px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .rank-label { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px; }
+    .rank-label .rank { margin-bottom: 0; }
+    .rank-text { color: var(--text); font-size: 13px; font-weight: 900; }
+
+    .top-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .priority-card { border-radius: 18px; padding: 16px; }
+    .rank { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: var(--text); color: var(--surface); font-size: 13px; font-weight: 900; margin-bottom: 12px; }
+    .priority-card h3 { margin: 0 0 10px; font-size: 16px; line-height: 1.4; letter-spacing: -0.02em; }
+
+    .chip-row,
+    .task-meta { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip { display: inline-flex; align-items: center; padding: 6px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
+    .chip.danger { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
+    .chip.warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
+    .chip.success { background: var(--success-soft); color: var(--success); border-color: transparent; }
+    .chip.primary { background: var(--primary-soft); color: var(--primary); border-color: transparent; }
+
+    .filter-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .pill-btn,
+    .primary-btn,
+    .ghost-btn { padding: 10px 12px; font-size: 12px; }
+    .pill-btn.active { background: var(--primary-soft); color: var(--primary); border-color: rgba(79, 70, 229, 0.20); }
+    .primary-btn { border-color: transparent; background: var(--primary); color: var(--surface); }
+    .primary-btn:hover { filter: brightness(0.96); transform: translateY(-1px); }
+    .ghost-btn { background: var(--surface-soft); color: var(--muted); }
+    .pill-btn.delete { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
+
+    .toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 150px 170px; gap: 10px; margin-bottom: 14px; }
+    .input,
+    .select { width: 100%; padding: 12px 13px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--text); outline: none; }
+    .input:focus,
+    .select:focus { border-color: rgba(79, 70, 229, 0.45); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
+
+    .task-list { display: grid; gap: 12px; }
+    .task-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; border-radius: 18px; padding: 16px; }
+    .task-row.is-done { opacity: 0.62; }
+    .task-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .task-main h4 { margin: 0; font-size: 16px; letter-spacing: -0.02em; }
+    .task-main p { margin: 0 0 10px; font-size: 13px; line-height: 1.5; color: var(--muted); }
+
+    .progress-wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; margin-top: 10px; }
+    .progress-track { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.55); overflow: hidden; border: 1px solid rgba(255,255,255,0.25); }
+    html[data-theme="dark"] .progress-track { background: rgba(17,24,39,0.28); border-color: rgba(255,255,255,0.08); }
+    .progress-bar { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #4f46e5, #7c6cf6); }
+    .progress-text { font-size: 12px; font-weight: 900; color: var(--text); }
+    .task-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+
+    .right-stack { display: grid; gap: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-grid .full { grid-column: 1 / -1; }
+    .form-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { display: grid; gap: 6px; font-size: 12px; font-weight: 800; color: var(--muted); }
+    .range-value { color: var(--primary); font-weight: 900; }
+    input[type="range"] { width: 100%; accent-color: var(--primary); }
+
+    .palette-wrap { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+    .palette-btn { min-height: 34px; border-radius: 12px; border: 2px solid transparent; display: grid; place-items: center; color: rgba(31,41,55,0.70); font-size: 11px; font-weight: 900; }
+    .palette-btn.active { border-color: var(--primary); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.65); }
+    .palette-note { margin: 2px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .palette-wrap.disabled { opacity: 0.52; pointer-events: none; }
+
+    .focus-blocks { display: grid; gap: 10px; margin-top: 6px; }
+    .focus-block { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px; border-radius: 16px; }
+    .focus-time { font-size: 13px; font-weight: 900; color: var(--primary); }
+    .focus-task { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .empty-state { padding: 28px 16px; border: 1px dashed #d5dbe7; border-radius: 18px; text-align: center; color: var(--muted); background: var(--surface-soft); }
+
+    .toast { position: fixed; right: 20px; bottom: 20px; max-width: 420px; padding: 14px 16px; border-radius: 16px; background: #111827; color: #fff; box-shadow: var(--shadow); transform: translateY(120%); opacity: 0; transition: transform 0.2s ease, opacity 0.2s ease; z-index: 100; font-size: 14px; line-height: 1.45; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    @media (max-width: 1120px) {
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .content-grid { grid-template-columns: 1fr; }
+      .subject-panel { position: static; max-height: none; }
+      .subject-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .top-three { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 820px) {
+      .hero { flex-direction: column; }
+      .top-controls { width: 100%; min-width: 0; }
+      .day-nav { width: 100%; grid-template-columns: 1fr auto 1fr; }
+      .calendar-grid { gap: 8px; }
+      .day-cell { min-height: 112px; }
+      .toolbar { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-actions { grid-template-columns: 1fr; }
+      .subject-board { grid-template-columns: 1fr; }
+      .task-row { grid-template-columns: 1fr; }
+      .task-actions { justify-content: flex-start; }
+      .focus-block { grid-template-columns: 1fr; }
+      .section-header { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 640px) {
+      .page { padding: 18px 14px 28px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .calendar-weekdays, .calendar-grid { gap: 6px; }
+      .weekday { font-size: 11px; }
+      .day-cell { min-height: 92px; padding: 10px; }
+      .month-label { min-width: auto; }
+      .palette-wrap { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero card">
+      <div>
+        <h1 class="app-title">ADAPTIVE STUDY PLANNER</h1>
+        <p class="subtitle" data-i18n="subtitle"></p>
+      </div>
+      <div class="top-controls">
+        <div class="mode-controls">
+          <button class="toggle-btn" id="themeToggleBtn" type="button"></button>
+          <button class="toggle-btn" id="languageToggleBtn" type="button"></button>
+        </div>
+        <div class="day-nav" aria-label="date navigation">
+          <button class="day-btn" id="prevDayBtn" type="button" data-i18n="prevDay"></button>
+          <div class="selected-date" id="selectedDateLabel"></div>
+          <button class="day-btn" id="nextDayBtn" type="button" data-i18n="nextDay"></button>
+          <button class="today-nav-btn" id="todayBtn" type="button" data-i18n="goToday"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-grid" aria-label="study summary">
+      <article class="card metric-card">
+        <div class="metric-label"><span data-i18n="completionRate"></span> <span class="dot success"></span></div>
+        <div class="metric-value" id="completionRate">0%</div>
+        <div class="metric-help" id="completionMessage"></div>
+      </article>
+      <article class="card metric-card">
+        <div class="metric-label"><span data-i18n="urgentDue"></span> <span class="dot danger"></span></div>
+        <div class="metric-value" id="urgentCount">0</div>
+        <div class="metric-help" data-i18n="urgentHelp"></div>
+      </article>
+      <article class="card metric-card">
+        <div class="metric-label"><span data-i18n="postponeWarning"></span> <span class="dot warning"></span></div>
+        <div class="metric-value" id="postponeCount">0</div>
+        <div class="metric-help" data-i18n="postponeHelp"></div>
+      </article>
+      <article class="card metric-card">
+        <div class="metric-label"><span data-i18n="focusTime"></span> <span class="dot"></span></div>
+        <div class="metric-value" id="focusTime">-</div>
+        <div class="metric-help" data-i18n="focusHelp"></div>
+      </article>
+    </section>
+
+    <section class="card calendar-card">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title" data-i18n="calendarTitle"></h2>
+          <p class="section-caption" data-i18n="calendarCaption"></p>
+        </div>
+        <div class="calendar-nav">
+          <button class="icon-btn" id="prevMonthBtn" type="button" aria-label="previous month">‹</button>
+          <div class="month-label" id="monthLabel"></div>
+          <button class="icon-btn" id="nextMonthBtn" type="button" aria-label="next month">›</button>
+        </div>
+      </div>
+      <div class="selected-day-summary" id="selectedDaySummary"></div>
+      <div class="calendar-weekdays" id="calendarWeekdays" aria-hidden="true"></div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </section>
+
+    <section class="content-grid">
+      <aside class="card panel subject-panel">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title" data-i18n="subjectBoardTitle"></h2>
+            <p class="section-caption" data-i18n="subjectBoardCaption"></p>
+          </div>
+        </div>
+        <div class="subject-board" id="subjectBoard"></div>
+      </aside>
+
+      <div class="card panel">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title" data-i18n="mainListTitle"></h2>
+            <p class="section-caption" data-i18n="mainListCaption"></p>
+          </div>
+        </div>
+
+        <div class="top-three" id="topThree"></div>
+
+        <div class="filter-tabs" aria-label="task filter">
+          <button class="pill-btn active" data-filter="all" type="button" data-i18n="filterAll"></button>
+          <button class="pill-btn" data-filter="todo" type="button" data-i18n="filterTodo"></button>
+          <button class="pill-btn" data-filter="done" type="button" data-i18n="filterDone"></button>
+          <button class="pill-btn" data-filter="selected" type="button" data-i18n="filterSelected"></button>
+        </div>
+
+        <div class="toolbar">
+          <input class="input" id="searchInput" />
+          <select class="select" id="subjectFilter"></select>
+          <select class="select" id="sortMode"></select>
+        </div>
+
+        <div class="task-list" id="taskList"></div>
+      </div>
+
+      <div class="right-stack">
+        <aside class="card panel">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title" id="formTitle"></h2>
+              <p class="section-caption" id="formCaption"></p>
+            </div>
+          </div>
+
+          <form id="taskForm" class="form-grid">
+            <label class="full"><span data-i18n="taskTitleLabel"></span>
+              <input class="input" id="taskTitle" required />
+            </label>
+            <label><span data-i18n="subjectLabel"></span>
+              <input class="input" id="taskSubject" required />
+            </label>
+            <label><span data-i18n="dueLabel"></span>
+              <input class="input" id="taskDue" type="date" required />
+            </label>
+            <label><span data-i18n="importanceLabel"></span>
+              <select class="select" id="taskImportance"></select>
+            </label>
+            <label><span data-i18n="hoursLabel"></span>
+              <select class="select" id="taskHours"></select>
+            </label>
+            <label class="full"><span><span data-i18n="progressLabel"></span> <span class="range-value" id="progressValue">30%</span></span>
+              <input id="taskProgress" type="range" min="0" max="100" step="5" value="30" />
+            </label>
+            <label class="full"><span data-i18n="slotLabel"></span>
+              <select class="select" id="taskSlot"></select>
+            </label>
+            <label class="full" id="subjectColorLabel"><span data-i18n="subjectColorLabel"></span>
+              <div class="palette-wrap" id="subjectColorPalette"></div>
+              <p class="palette-note" id="subjectColorNote"></p>
+            </label>
+            <div class="form-actions full">
+              <button class="primary-btn" id="submitTaskBtn" type="submit"></button>
+              <button class="ghost-btn" id="resetFormBtn" type="button"></button>
+            </div>
+          </form>
+        </aside>
+
+        <aside class="card panel">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title" data-i18n="focusBlockTitle"></h2>
+              <p class="section-caption" data-i18n="focusBlockCaption"></p>
+            </div>
+          </div>
+          <div class="focus-blocks" id="focusBlocks"></div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "adaptive-study-planner-final-pastel-v1";
+    const COLOR_STORAGE_KEY = "adaptive-study-planner-subject-colors-v1";
+    const SETTINGS_STORAGE_KEY = "adaptive-study-planner-settings-v1";
+
+    const PASTEL_COLORS = [
+      { key: "lavender", bg: "#ede9fe", border: "#c4b5fd", text: "#5b21b6" },
+      { key: "sky", bg: "#e0f2fe", border: "#93c5fd", text: "#075985" },
+      { key: "mint", bg: "#dcfce7", border: "#86efac", text: "#166534" },
+      { key: "peach", bg: "#ffedd5", border: "#fdba74", text: "#9a3412" },
+      { key: "rose", bg: "#ffe4e6", border: "#fda4af", text: "#9f1239" },
+      { key: "lemon", bg: "#fef9c3", border: "#fde047", text: "#854d0e" },
+      { key: "aqua", bg: "#ccfbf1", border: "#5eead4", text: "#115e59" },
+      { key: "pink", bg: "#fce7f3", border: "#f9a8d4", text: "#9d174d" },
+      { key: "slate", bg: "#e2e8f0", border: "#cbd5e1", text: "#334155" },
+      { key: "lime", bg: "#ecfccb", border: "#bef264", text: "#3f6212" }
+    ];
+
+    const I18N = {
+      ko: {
+        subtitle: "마감일은 오늘 기준 D-Day로 표시하고, 진행률·미루기 횟수·완료 여부에 따라 우선순위가 자동으로 바뀌는 학습 플래너입니다.",
+        prevDay: "← 전날", nextDay: "다음날 →", goToday: "오늘로 이동",
+        themeLight: "라이트 모드", themeDark: "다크 모드", languageButton: "English",
+        completionRate: "선택일 완료율", urgentDue: "마감 임박", postponeWarning: "미루기 경고", focusTime: "추천 집중 시간",
+        urgentHelp: "오늘 기준 D-2 이내 미완료 항목입니다.", postponeHelp: "미루기 2회 이상인 미완료 항목입니다.", focusHelp: "우선순위가 높은 항목의 선호 시간대입니다.",
+        calendarTitle: "이번 달 큰 달력", calendarCaption: "날짜를 클릭하면 해당 날짜 기준으로 요약, TOP 3, 학습 목록이 다시 계산됩니다.",
+        subjectBoardTitle: "과목별 할 일", subjectBoardCaption: "과목을 누르면 오른쪽 학습 목록이 해당 과목으로 필터링됩니다.",
+        mainListTitle: "추천 TOP 3 + 학습 목록", mainListCaption: "TOP 3는 추가 순서가 아니라 오늘 기준 마감일 → 진행률 → 미루기 횟수 → 중요도 기준으로 자동 정렬됩니다.",
+        filterAll: "전체", filterTodo: "진행 중", filterDone: "완료", filterSelected: "선택 날짜",
+        searchPlaceholder: "과목 또는 학습명을 검색", allSubjects: "전체 과목", sortAdaptive: "추천순(오늘 기준)", sortDue: "마감일순", sortProgress: "진행률 낮은순",
+        formAddTitle: "학습 항목 추가", formAddCaption: "새 과목은 처음 추가할 때만 색상을 지정하고, 같은 과목은 자동으로 같은 색상이 적용됩니다.", formEditTitle: "학습 항목 수정", formEditCaption: "수정 내용을 저장하면 목록, 달력, 추천 순위가 다시 계산됩니다.",
+        taskTitleLabel: "학습명", subjectLabel: "과목", dueLabel: "마감일", importanceLabel: "중요도", hoursLabel: "예상 소요", progressLabel: "진행률", slotLabel: "선호 시간대", subjectColorLabel: "과목 색상",
+        taskTitlePlaceholder: "예: 운영체제 3장 복습", subjectPlaceholder: "예: 운영체제",
+        importanceHigh: "상", importanceMid: "중", importanceLow: "하", h1: "1시간", h2: "2시간", h3: "3시간", h4: "4시간 이상",
+        morning: "오전", afternoon: "오후", evening: "저녁", night: "야간",
+        addTask: "항목 추가", saveEdit: "수정 저장", resetInput: "입력 초기화", cancelEdit: "수정 취소",
+        paletteNew: "새 과목입니다. 위 10가지 파스텔 색상 중 하나를 선택하세요.", paletteExisting: "이미 등록된 과목입니다. 기존 과목 색상이 자동 적용됩니다.",
+        focusBlockTitle: "추천 집중 블록", focusBlockCaption: "우선순위가 높은 공부를 시간대별로 간단히 정리합니다.",
+        noTaskSelected: "선택한 날짜에 등록된 학습 항목이 없습니다.", noPlan: "계획된 학습이 없습니다.", allDoneMsg: "모든 학습을 완료했습니다.", partialDone: "{total}개 중 {done}개 완료했습니다.",
+        count: "개", noSubject: "등록된 과목이 없습니다.", subjectDone: "모든 학습 완료", noPending: "남은 학습 없음", progressText: "진행률", doneOf: "{done} / {total}",
+        noTop3: "추천할 미완료 항목이 없습니다.", recommendation: "추천 항목", continueTask: "이어서 하기", startTask: "시작하기",
+        dueSoon: "마감 임박", postponeAlert: "미루기 경고", highImportance: "중요도 높음", lowProgress: "진행률 낮음", recommendedStudy: "추천 학습",
+        noMatching: "조건에 맞는 학습이 없습니다.", completedExcluded: "완료된 항목입니다. 추천 목록에서는 제외됩니다.", postponeWeighted: "미루기 경고가 있는 항목입니다. 우선순위에 가중치가 반영됩니다.", urgentLowProgress: "마감이 가까운데 진행률이 낮아 우선 확인이 필요합니다.", sortedByAdaptive: "오늘 기준 마감일과 진행률을 반영해 정렬되었습니다.",
+        undo: "취소", complete: "완료", postponeOneDay: "+1일 미루기", edit: "수정", delete: "삭제", noFocus: "배정할 학습이 없습니다.", noFocusSlot: "배정된 집중 시간이 없습니다.",
+        titleSubjectRequired: "학습명과 과목을 입력하세요.", added: "새 항목이 추가되었습니다.", updated: "항목이 수정되었습니다.", deleted: "항목이 삭제되었습니다.", deleteConfirm: "이 학습 항목을 삭제하시겠습니까?", doneToast: "학습을 완료했습니다.", undoneToast: "완료를 취소했습니다.", postponedToast: "마감일이 하루 미뤄졌습니다.", editToast: "항목을 수정하여 진행률을 업데이트하세요.",
+        prevMonth: "이전 달", nextMonth: "다음 달", today: "오늘", totalItems: "총 {total}개 항목 중 {done}개 완료", noneOnDate: "계획된 학습이 없습니다.",
+        weekdays: ["일", "월", "화", "수", "목", "금", "토"]
+      },
+      en: {
+        subtitle: "A study planner that recalculates priorities from deadlines, progress, postponement count, and completion status.",
+        prevDay: "← Prev day", nextDay: "Next day →", goToday: "Go to today",
+        themeLight: "Light mode", themeDark: "Dark mode", languageButton: "한국어",
+        completionRate: "Selected day completion", urgentDue: "Due soon", postponeWarning: "Postpone warning", focusTime: "Recommended focus time",
+        urgentHelp: "Incomplete tasks due within D-2 from today.", postponeHelp: "Incomplete tasks postponed two or more times.", focusHelp: "Preferred time slot of high-priority tasks.",
+        calendarTitle: "Monthly calendar", calendarCaption: "Click a date to update the summary, TOP 3, and task list.",
+        subjectBoardTitle: "Tasks by subject", subjectBoardCaption: "Click a subject to filter the task list on the right.",
+        mainListTitle: "TOP 3 recommendations + task list", mainListCaption: "TOP 3 is sorted by deadline, progress, postponement count, and importance, not by input order.",
+        filterAll: "All", filterTodo: "In progress", filterDone: "Done", filterSelected: "Selected date",
+        searchPlaceholder: "Search subject or task", allSubjects: "All subjects", sortAdaptive: "Recommended", sortDue: "Due date", sortProgress: "Lowest progress",
+        formAddTitle: "Add study task", formAddCaption: "Choose a pastel color only when adding a new subject. The same subject automatically keeps the same color.", formEditTitle: "Edit study task", formEditCaption: "Saving edits recalculates the list, calendar, and recommendations.",
+        taskTitleLabel: "Task title", subjectLabel: "Subject", dueLabel: "Due date", importanceLabel: "Importance", hoursLabel: "Estimated time", progressLabel: "Progress", slotLabel: "Preferred time", subjectColorLabel: "Subject color",
+        taskTitlePlaceholder: "e.g. Review OS chapter 3", subjectPlaceholder: "e.g. Operating Systems",
+        importanceHigh: "High", importanceMid: "Medium", importanceLow: "Low", h1: "1 hour", h2: "2 hours", h3: "3 hours", h4: "4+ hours",
+        morning: "Morning", afternoon: "Afternoon", evening: "Evening", night: "Night",
+        addTask: "Add task", saveEdit: "Save edit", resetInput: "Reset", cancelEdit: "Cancel edit",
+        paletteNew: "New subject. Choose one of the 10 pastel colors.", paletteExisting: "Existing subject. Its saved color is applied automatically.",
+        focusBlockTitle: "Recommended focus blocks", focusBlockCaption: "High-priority tasks are grouped by preferred study time.",
+        noTaskSelected: "No study tasks are scheduled for the selected date.", noPlan: "No study plan scheduled.", allDoneMsg: "All study tasks are completed.", partialDone: "Completed {done} of {total} tasks.",
+        count: "", noSubject: "No subjects yet.", subjectDone: "All tasks completed", noPending: "No pending tasks", progressText: "Progress", doneOf: "{done} / {total}",
+        noTop3: "No incomplete tasks to recommend.", recommendation: "Recommended", continueTask: "Continue", startTask: "Start",
+        dueSoon: "Due soon", postponeAlert: "Postpone warning", highImportance: "High importance", lowProgress: "Low progress", recommendedStudy: "Recommended",
+        noMatching: "No tasks match the current condition.", completedExcluded: "Completed task. It is excluded from recommendations.", postponeWeighted: "Postpone warning is applied to the priority calculation.", urgentLowProgress: "Deadline is close and progress is low.", sortedByAdaptive: "Sorted by deadline and progress from today.",
+        undo: "Undo", complete: "Complete", postponeOneDay: "Postpone +1 day", edit: "Edit", delete: "Delete", noFocus: "No tasks to assign.", noFocusSlot: "No focus blocks assigned.",
+        titleSubjectRequired: "Enter both task title and subject.", added: "New task added.", updated: "Task updated.", deleted: "Task deleted.", deleteConfirm: "Delete this study task?", doneToast: "Task completed.", undoneToast: "Completion canceled.", postponedToast: "Due date moved back by one day.", editToast: "Edit the task to update progress.",
+        prevMonth: "Previous month", nextMonth: "Next month", today: "Today", totalItems: "Completed {done} of {total} tasks", noneOnDate: "No study plan scheduled.",
+        weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+      }
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+    const els = {
+      html: document.documentElement,
+      themeToggleBtn: $("#themeToggleBtn"),
+      languageToggleBtn: $("#languageToggleBtn"),
+      selectedDateLabel: $("#selectedDateLabel"),
+      prevDayBtn: $("#prevDayBtn"),
+      nextDayBtn: $("#nextDayBtn"),
+      todayBtn: $("#todayBtn"),
+      completionRate: $("#completionRate"),
+      completionMessage: $("#completionMessage"),
+      urgentCount: $("#urgentCount"),
+      postponeCount: $("#postponeCount"),
+      focusTime: $("#focusTime"),
+      selectedDaySummary: $("#selectedDaySummary"),
+      monthLabel: $("#monthLabel"),
+      prevMonthBtn: $("#prevMonthBtn"),
+      nextMonthBtn: $("#nextMonthBtn"),
+      calendarWeekdays: $("#calendarWeekdays"),
+      calendarGrid: $("#calendarGrid"),
+      subjectBoard: $("#subjectBoard"),
+      topThree: $("#topThree"),
+      taskList: $("#taskList"),
+      searchInput: $("#searchInput"),
+      subjectFilter: $("#subjectFilter"),
+      sortMode: $("#sortMode"),
+      taskForm: $("#taskForm"),
+      taskTitle: $("#taskTitle"),
+      taskSubject: $("#taskSubject"),
+      taskDue: $("#taskDue"),
+      taskImportance: $("#taskImportance"),
+      taskHours: $("#taskHours"),
+      taskProgress: $("#taskProgress"),
+      progressValue: $("#progressValue"),
+      taskSlot: $("#taskSlot"),
+      subjectColorPalette: $("#subjectColorPalette"),
+      subjectColorNote: $("#subjectColorNote"),
+      formTitle: $("#formTitle"),
+      formCaption: $("#formCaption"),
+      submitTaskBtn: $("#submitTaskBtn"),
+      resetFormBtn: $("#resetFormBtn"),
+      focusBlocks: $("#focusBlocks"),
+      toast: $("#toast")
+    };
+
+    function getSavedSettings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || "{}");
+        return { theme: saved.theme || "light", language: saved.language || "ko" };
+      } catch {
+        return { theme: "light", language: "ko" };
+      }
+    }
+
+    let settings = getSavedSettings();
+    let lang = settings.language;
+    let selectedColorKey = PASTEL_COLORS[0].key;
+    let subjectColors = loadSubjectColors();
+
+    function t(key, values = {}) {
+      let text = I18N[lang][key] ?? I18N.ko[key] ?? key;
+      Object.entries(values).forEach(([k, v]) => text = text.replace(`{${k}}`, v));
+      return text;
+    }
+
+    function makeId() {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+      return `task-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function pad2(value) { return String(value).padStart(2, "0"); }
+    function todayKey() { return formatDateKey(new Date()); }
+    function isValidDateKey(key) { return /^\d{4}-\d{2}-\d{2}$/.test(String(key || "")); }
+    function parseDateKey(key) {
+      const [year, month, day] = String(key).split("-").map(Number);
+      if (!year || !month || !day) return new Date();
+      return new Date(year, month - 1, day);
+    }
+    function dateOnly(date) {
+      const d = date instanceof Date ? new Date(date) : parseDateKey(String(date));
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    function formatDateKey(date) {
+      const d = date instanceof Date ? dateOnly(date) : parseDateKey(String(date));
+      return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    }
+    function addDaysToKey(key, amount) {
+      const d = parseDateKey(key);
+      d.setDate(d.getDate() + amount);
+      return formatDateKey(d);
+    }
+    function startOfMonthKey(key) {
+      const d = parseDateKey(key);
+      return new Date(d.getFullYear(), d.getMonth(), 1);
+    }
+    function formatDate(key, options = {}) {
+      const locale = lang === "ko" ? "ko-KR" : "en-US";
+      const defaults = lang === "ko"
+        ? { year: "numeric", month: "long", day: "numeric", weekday: "long" }
+        : { year: "numeric", month: "long", day: "numeric", weekday: "long" };
+      return parseDateKey(key).toLocaleDateString(locale, { ...defaults, ...options });
+    }
+    function formatShortDate(key) {
+      return parseDateKey(key).toLocaleDateString(lang === "ko" ? "ko-KR" : "en-US", { month: "short", day: "numeric", weekday: "short" });
+    }
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function loadSubjectColors() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(COLOR_STORAGE_KEY) || "{}");
+        return saved && typeof saved === "object" ? saved : {};
+      } catch {
+        return {};
+      }
+    }
+    function saveSubjectColors() { localStorage.setItem(COLOR_STORAGE_KEY, JSON.stringify(subjectColors)); }
+    function getColorByKey(key) { return PASTEL_COLORS.find(c => c.key === key) || PASTEL_COLORS[0]; }
+    function getSubjectColorKey(subject) {
+      if (!subjectColors[subject]) {
+        const index = Object.keys(subjectColors).length % PASTEL_COLORS.length;
+        subjectColors[subject] = PASTEL_COLORS[index].key;
+        saveSubjectColors();
+      }
+      return subjectColors[subject];
+    }
+    function getSubjectColor(subject) { return getColorByKey(getSubjectColorKey(subject || "기타")); }
+    function subjectStyle(subject) {
+      const c = getSubjectColor(subject);
+      return `background:${c.bg}; border-color:${c.border}; color:${c.text};`;
+    }
+    function subjectChipStyle(subject) {
+      const c = getSubjectColor(subject);
+      return `background:${c.bg}; border-color:${c.border}; color:${c.text};`;
+    }
+
+    function normalizeTask(task) {
+      const rawDue = task.due || task.dueDate || task.date || todayKey();
+      const normalizedDue = isValidDateKey(rawDue) ? rawDue : formatDateKey(parseDateKey(rawDue));
+      return {
+        id: task.id || makeId(),
+        title: task.title || task.name || "Untitled",
+        subject: task.subject || "General",
+        due: normalizedDue,
+        progress: Number.isFinite(Number(task.progress)) ? Number(task.progress) : 0,
+        importance: Number.isFinite(Number(task.importance)) ? Number(task.importance) : 3,
+        hours: Number.isFinite(Number(task.hours || task.estimatedHours)) ? Number(task.hours || task.estimatedHours) : 1,
+        slot: task.slot || task.preferredTime || "저녁",
+        postponed: Number.isFinite(Number(task.postponed || task.postponedCount)) ? Number(task.postponed || task.postponedCount) : 0,
+        done: Boolean(task.done ?? task.completed)
+      };
+    }
+
+    function loadTasks() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.map(normalizeTask) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    let tasks = loadTasks();
+    let selectedDateKey = todayKey();
+    let currentMonth = startOfMonthKey(selectedDateKey);
+    let activeFilter = "all";
+    let editingTaskId = null;
+
+    function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+    function saveSettings() { localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings)); }
+
+    function dayDiffFromReference(dueKey, referenceKey = todayKey()) {
+      return Math.round((parseDateKey(dueKey) - parseDateKey(referenceKey)) / (1000 * 60 * 60 * 24));
+    }
+    function adaptiveScore(task, referenceKey = todayKey()) {
+      if (task.done) return -1;
+      const days = dayDiffFromReference(task.due, referenceKey);
+      const ddayScore = days < 0 ? 18 : days === 0 ? 60 : Math.max(0, 48 - days * 6);
+      const importanceScore = Number(task.importance) * 8;
+      const progressPenalty = Math.round((100 - Number(task.progress)) / 4);
+      const postponePenalty = Number(task.postponed || 0) * 9;
+      const hoursBoost = Number(task.hours || 1) >= 3 ? 5 : 0;
+      return ddayScore + importanceScore + progressPenalty + postponePenalty + hoursBoost;
+    }
+    function riskLevel(task, referenceKey = todayKey()) {
+      if (task.done) return "success";
+      const days = dayDiffFromReference(task.due, referenceKey);
+      const score = adaptiveScore(task, referenceKey);
+      if (days <= 1 || score >= 95 || (days <= 3 && Number(task.progress) < 35)) return "danger";
+      if (days <= 5 || score >= 70 || Number(task.postponed || 0) >= 2) return "warning";
+      return "success";
+    }
+    function ddayLabel(task, referenceKey = todayKey()) {
+      const days = dayDiffFromReference(task.due, referenceKey);
+      if (days < 0) return `D+${Math.abs(days)}`;
+      if (days === 0) return "D-Day";
+      return `D-${days}`;
+    }
+    function importanceText(value) {
+      if (Number(value) >= 5) return t("importanceHigh");
+      if (Number(value) >= 3) return t("importanceMid");
+      return t("importanceLow");
+    }
+    function localizedSlot(slot) {
+      const map = { "오전": t("morning"), "오후": t("afternoon"), "저녁": t("evening"), "야간": t("night") };
+      return map[slot] || slot;
+    }
+    function slotTime(slot) {
+      return { "오전": "09:00", "오후": "14:00", "저녁": "19:00", "야간": "22:00" }[slot] || "19:00";
+    }
+
+    function getSortedTasks(inputTasks) {
+      const copied = [...inputTasks];
+      const mode = els.sortMode.value;
+      if (mode === "due") return copied.sort((a, b) => parseDateKey(a.due) - parseDateKey(b.due));
+      if (mode === "progress") return copied.sort((a, b) => Number(a.progress) - Number(b.progress));
+      return copied.sort((a, b) => {
+        if (a.done && !b.done) return 1;
+        if (!a.done && b.done) return -1;
+        const scoreDiff = adaptiveScore(b) - adaptiveScore(a);
+        if (scoreDiff !== 0) return scoreDiff;
+        const dueDiff = parseDateKey(a.due) - parseDateKey(b.due);
+        if (dueDiff !== 0) return dueDiff;
+        return String(a.title).localeCompare(String(b.title), lang === "ko" ? "ko" : "en");
+      });
+    }
+
+    function getTaskReason(task) {
+      const days = dayDiffFromReference(task.due);
+      if (days <= 1) return t("dueSoon");
+      if (Number(task.postponed) >= 2) return t("postponeAlert");
+      if (Number(task.importance) >= 4) return t("highImportance");
+      if (Number(task.progress) < 40) return t("lowProgress");
+      return t("recommendedStudy");
+    }
+
+    function filteredTasks() {
+      let filtered = [...tasks];
+      const searchTerm = els.searchInput.value.toLowerCase().trim();
+      if (searchTerm) return filtered.filter(task => `${task.title} ${task.subject}`.toLowerCase().includes(searchTerm));
+      if (activeFilter === "todo") filtered = filtered.filter(task => !task.done);
+      else if (activeFilter === "done") filtered = filtered.filter(task => task.done);
+      else if (activeFilter === "selected") filtered = filtered.filter(task => task.due === selectedDateKey);
+      else if (activeFilter !== "all") filtered = filtered.filter(task => task.subject === activeFilter);
+      const subjectFilterValue = els.subjectFilter.value;
+      if (subjectFilterValue && subjectFilterValue !== "all") filtered = filtered.filter(task => task.subject === subjectFilterValue);
+      return filtered;
+    }
+
+    function applyStaticText() {
+      els.html.lang = lang;
+      els.html.dataset.theme = settings.theme;
+      document.querySelectorAll("[data-i18n]").forEach(node => node.textContent = t(node.dataset.i18n));
+      els.themeToggleBtn.textContent = settings.theme === "dark" ? t("themeLight") : t("themeDark");
+      els.languageToggleBtn.textContent = t("languageButton");
+      els.searchInput.placeholder = t("searchPlaceholder");
+      els.taskTitle.placeholder = t("taskTitlePlaceholder");
+      els.taskSubject.placeholder = t("subjectPlaceholder");
+      els.prevMonthBtn.setAttribute("aria-label", t("prevMonth"));
+      els.nextMonthBtn.setAttribute("aria-label", t("nextMonth"));
+
+      els.taskImportance.innerHTML = `
+        <option value="5">${t("importanceHigh")}</option>
+        <option value="3">${t("importanceMid")}</option>
+        <option value="1">${t("importanceLow")}</option>`;
+      els.taskHours.innerHTML = `
+        <option value="1">${t("h1")}</option>
+        <option value="2">${t("h2")}</option>
+        <option value="3">${t("h3")}</option>
+        <option value="4">${t("h4")}</option>`;
+      els.taskSlot.innerHTML = `
+        <option value="오전">${t("morning")}</option>
+        <option value="오후">${t("afternoon")}</option>
+        <option value="저녁" selected>${t("evening")}</option>
+        <option value="야간">${t("night")}</option>`;
+      els.sortMode.innerHTML = `
+        <option value="adaptive">${t("sortAdaptive")}</option>
+        <option value="due">${t("sortDue")}</option>
+        <option value="progress">${t("sortProgress")}</option>`;
+      els.calendarWeekdays.innerHTML = I18N[lang].weekdays.map(day => `<div class="weekday">${day}</div>`).join("");
+    }
+
+    function renderSubjectFilter() {
+      const current = els.subjectFilter.value;
+      const subjects = [...new Set(tasks.map(task => task.subject).filter(Boolean))].sort();
+      els.subjectFilter.innerHTML = `<option value="all">${t("allSubjects")}</option>` + subjects.map(subject => `<option value="${escapeHtml(subject)}">${escapeHtml(subject)}</option>`).join("");
+      if (subjects.includes(current)) els.subjectFilter.value = current;
+    }
+
+    function renderPalette() {
+      const subject = els.taskSubject.value.trim();
+      const existingColorKey = subjectColors[subject];
+      if (existingColorKey) selectedColorKey = existingColorKey;
+      els.subjectColorPalette.classList.toggle("disabled", Boolean(existingColorKey) || Boolean(editingTaskId));
+      els.subjectColorNote.textContent = existingColorKey || editingTaskId ? t("paletteExisting") : t("paletteNew");
+      els.subjectColorPalette.innerHTML = PASTEL_COLORS.map((color, index) => `
+        <button class="palette-btn ${color.key === selectedColorKey ? "active" : ""}" type="button" data-color-key="${color.key}" style="background:${color.bg}; border-color:${color.key === selectedColorKey ? "var(--primary)" : color.border}; color:${color.text};">${index + 1}</button>
+      `).join("");
+    }
+
+    function renderSummary() {
+      const selectedTasks = tasks.filter(task => task.due === selectedDateKey);
+      const total = selectedTasks.length;
+      const done = selectedTasks.filter(task => task.done).length;
+      const completion = total ? Math.round((done / total) * 100) : 0;
+      els.completionRate.textContent = `${completion}%`;
+      if (!total) els.completionMessage.textContent = t("noPlan");
+      else if (completion === 100) els.completionMessage.textContent = t("allDoneMsg");
+      else els.completionMessage.textContent = t("partialDone", { total, done });
+
+      const urgent = tasks.filter(task => !task.done && dayDiffFromReference(task.due) >= 0 && dayDiffFromReference(task.due) <= 2).length;
+      const postponed = tasks.filter(task => !task.done && Number(task.postponed) >= 2).length;
+      els.urgentCount.textContent = lang === "ko" ? `${urgent}개` : String(urgent);
+      els.postponeCount.textContent = lang === "ko" ? `${postponed}개` : String(postponed);
+
+      const top = getSortedTasks(tasks.filter(task => !task.done))[0];
+      els.focusTime.textContent = top ? localizedSlot(top.slot) : "-";
+    }
+
+    function renderCalendar() {
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+      els.monthLabel.textContent = parseDateKey(`${year}-${pad2(month + 1)}-01`).toLocaleDateString(lang === "ko" ? "ko-KR" : "en-US", { year: "numeric", month: "long" });
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      let html = "";
+      for (let i = 0; i < firstDay.getDay(); i++) html += `<div class="day-cell muted"></div>`;
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const dateKey = formatDateKey(new Date(year, month, day));
+        const dayTasks = tasks.filter(task => task.due === dateKey);
+        const badges = dayTasks.slice(0, 3).map(task => `<span class="mini-badge" style="${subjectChipStyle(task.subject)}">${escapeHtml(task.title)}</span>`).join("");
+        const more = dayTasks.length > 3 ? `<span class="mini-badge gray">+${dayTasks.length - 3}</span>` : "";
+        html += `
+          <button class="day-cell ${dateKey === todayKey() ? "today" : ""} ${dateKey === selectedDateKey ? "selected" : ""}" type="button" data-date="${dateKey}">
+            <div class="day-number"><span>${day}</span>${dateKey === todayKey() ? `<span class="today-chip">${t("today")}</span>` : ""}</div>
+            <div class="badge-stack">${badges}${more}</div>
+          </button>`;
+      }
+      els.calendarGrid.innerHTML = html;
+      els.selectedDateLabel.textContent = formatDate(selectedDateKey);
+      const selectedTasks = tasks.filter(task => task.due === selectedDateKey);
+      if (!selectedTasks.length) els.selectedDaySummary.innerHTML = `<strong>${formatDate(selectedDateKey)}</strong>: ${t("noneOnDate")}`;
+      else {
+        const done = selectedTasks.filter(task => task.done).length;
+        const chips = selectedTasks.slice(0, 4).map(task => `<span class="mini-badge" style="${subjectChipStyle(task.subject)}">${escapeHtml(task.subject)} · ${escapeHtml(task.title)}</span>`).join("");
+        els.selectedDaySummary.innerHTML = `<strong>${formatDate(selectedDateKey)}</strong>: ${t("totalItems", { total: selectedTasks.length, done })} ${chips}`;
+      }
+    }
+
+    function renderSubjectBoard() {
+      const subjects = [...new Set(tasks.map(task => task.subject))].sort();
+      if (!subjects.length) {
+        els.subjectBoard.innerHTML = `<div class="empty-state">${t("noSubject")}</div>`;
+        return;
+      }
+      els.subjectBoard.innerHTML = subjects.map(subject => {
+        const subjectTasks = tasks.filter(task => task.subject === subject);
+        const doneCount = subjectTasks.filter(task => task.done).length;
+        const pending = getSortedTasks(subjectTasks.filter(task => !task.done)).slice(0, 3);
+        const preview = pending.length
+          ? pending.map(task => `<span class="subject-preview-item">• ${escapeHtml(task.title)}</span>`).join("")
+          : `<span class="subject-preview-item">${doneCount === subjectTasks.length ? t("subjectDone") : t("noPending")}</span>`;
+        return `
+          <button class="subject-card ${activeFilter === subject ? "active" : ""}" type="button" data-subject="${escapeHtml(subject)}" style="${subjectStyle(subject)}">
+            <div class="subject-head"><span class="subject-name">${escapeHtml(subject)}</span><span class="subject-count">${t("doneOf", { done: doneCount, total: subjectTasks.length })}</span></div>
+            <div class="subject-stat">${t("progressText")}: ${subjectTasks.length ? Math.round((doneCount / subjectTasks.length) * 100) : 0}%</div>
+            <div class="subject-preview">${preview}</div>
+          </button>`;
+      }).join("");
+    }
+
+    function renderTopThree() {
+      const top3 = getSortedTasks(filteredTasks().filter(task => !task.done)).slice(0, 3);
+      if (!top3.length) {
+        els.topThree.innerHTML = `<div class="empty-state" style="grid-column:1 / -1;">${t("noTop3")}</div>`;
+        return;
+      }
+      els.topThree.innerHTML = top3.map((task, index) => {
+        const level = riskLevel(task);
+        return `
+          <article class="priority-card" style="${subjectStyle(task.subject)}">
+            <div class="rank-label"><div class="rank">${index + 1}</div><span class="rank-text">${t("recommendation")}</span></div>
+            <h3>${escapeHtml(task.title)}</h3>
+            <div class="chip-row">
+              <span class="chip ${level}">${ddayLabel(task)}</span>
+              <span class="chip" style="${subjectChipStyle(task.subject)}">${escapeHtml(task.subject)}</span>
+              <span class="chip">${getTaskReason(task)}</span>
+            </div>
+            <div class="priority-reason">${task.hours}${lang === "ko" ? "시간 소요 예상" : "h estimated"} · ${localizedSlot(task.slot)}</div>
+            <button class="primary-btn start-task-btn" type="button" style="width:100%; margin-top:10px;" data-id="${task.id}">${Number(task.progress) > 0 ? t("continueTask") : t("startTask")}</button>
+          </article>`;
+      }).join("");
+    }
+
+    function renderTaskList() {
+      const visible = getSortedTasks(filteredTasks());
+      if (!visible.length) {
+        els.taskList.innerHTML = `<div class="empty-state">${t("noMatching")}</div>`;
+        return;
+      }
+      els.taskList.innerHTML = visible.map(task => {
+        const level = riskLevel(task);
+        const message = task.done ? t("completedExcluded") : Number(task.postponed) >= 2 ? t("postponeWeighted") : (dayDiffFromReference(task.due) <= 2 && Number(task.progress) < 50) ? t("urgentLowProgress") : t("sortedByAdaptive");
+        return `
+          <article class="task-row ${task.done ? "is-done" : ""}" style="${subjectStyle(task.subject)}">
+            <div class="task-main">
+              <div class="task-title-row"><h4>${escapeHtml(task.title)}</h4></div>
+              <p>${message}</p>
+              <div class="task-meta">
+                <span class="chip" style="${subjectChipStyle(task.subject)}">${escapeHtml(task.subject)}</span>
+                <span class="chip ${level}">${ddayLabel(task)} · ${formatShortDate(task.due)}</span>
+                ${Number(task.postponed) > 0 ? `<span class="chip warning">${task.postponed}${lang === "ko" ? "회 미룸" : " postponed"}</span>` : ""}
+                <span class="chip">${importanceText(task.importance)}</span>
+              </div>
+              <div class="progress-wrap"><div class="progress-track"><div class="progress-bar" style="width:${Number(task.progress)}%"></div></div><div class="progress-text">${Number(task.progress)}%</div></div>
+            </div>
+            <div class="task-actions">
+              <button class="pill-btn" type="button" onclick="toggleTaskDone('${task.id}')">${task.done ? t("undo") : t("complete")}</button>
+              ${!task.done ? `<button class="pill-btn" type="button" onclick="postponeTask('${task.id}')">${t("postponeOneDay")}</button>` : ""}
+              <button class="ghost-btn" type="button" onclick="editTask('${task.id}')">${t("edit")}</button>
+              <button class="pill-btn delete" type="button" onclick="deleteTask('${task.id}')">${t("delete")}</button>
+            </div>
+          </article>`;
+      }).join("");
+    }
+
+    function renderFocusBlocks() {
+      const pending = tasks.filter(task => !task.done);
+      if (!pending.length) {
+        els.focusBlocks.innerHTML = `<div class="empty-state">${t("noFocus")}</div>`;
+        return;
+      }
+      const slots = ["오전", "오후", "저녁", "야간"];
+      const html = slots.map(slot => {
+        const top = getSortedTasks(pending.filter(task => task.slot === slot))[0];
+        if (!top) return "";
+        return `<div class="focus-block" style="${subjectStyle(top.subject)}"><div class="focus-time">${slotTime(slot)}</div><div class="focus-task">${escapeHtml(top.title)}</div><span class="mini-badge" style="${subjectChipStyle(top.subject)}">${escapeHtml(top.subject)}</span></div>`;
+      }).join("");
+      els.focusBlocks.innerHTML = html || `<div class="empty-state">${t("noFocusSlot")}</div>`;
+    }
+
+    function renderFormState() {
+      if (editingTaskId) {
+        els.formTitle.textContent = t("formEditTitle");
+        els.formCaption.textContent = t("formEditCaption");
+        els.submitTaskBtn.textContent = t("saveEdit");
+        els.resetFormBtn.textContent = t("cancelEdit");
+      } else {
+        els.formTitle.textContent = t("formAddTitle");
+        els.formCaption.textContent = t("formAddCaption");
+        els.submitTaskBtn.textContent = t("addTask");
+        els.resetFormBtn.textContent = t("resetInput");
+      }
+      renderPalette();
+    }
+
+    function updateView() {
+      applyStaticText();
+      renderSubjectFilter();
+      renderSummary();
+      renderCalendar();
+      renderSubjectBoard();
+      renderTopThree();
+      renderTaskList();
+      renderFocusBlocks();
+      renderFormState();
+      saveTasks();
+      saveSubjectColors();
+    }
+
+    function resetForm() {
+      editingTaskId = null;
+      els.taskForm.reset();
+      els.taskDue.value = selectedDateKey;
+      els.taskProgress.value = 30;
+      els.progressValue.textContent = "30%";
+      els.taskImportance.value = "3";
+      els.taskHours.value = "1";
+      els.taskSlot.value = "저녁";
+      selectedColorKey = PASTEL_COLORS[Object.keys(subjectColors).length % PASTEL_COLORS.length].key;
+      renderFormState();
+    }
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => els.toast.classList.remove("show"), 2500);
+    }
+
+    window.toggleTaskDone = (id) => {
+      const task = tasks.find(item => item.id === id);
+      if (!task) return;
+      task.done = !task.done;
+      if (task.done) task.progress = 100;
+      saveTasks(); updateView(); showToast(task.done ? t("doneToast") : t("undoneToast"));
+    };
+
+    window.postponeTask = (id) => {
+      const task = tasks.find(item => item.id === id);
+      if (!task) return;
+      task.due = addDaysToKey(task.due, 1);
+      task.postponed = Number(task.postponed || 0) + 1;
+      task.done = false;
+      selectedDateKey = task.due;
+      currentMonth = startOfMonthKey(selectedDateKey);
+      saveTasks(); updateView(); showToast(t("postponedToast"));
+    };
+
+    window.deleteTask = (id) => {
+      if (!confirm(t("deleteConfirm"))) return;
+      tasks = tasks.filter(task => task.id !== id);
+      if (editingTaskId === id) resetForm();
+      saveTasks(); updateView(); showToast(t("deleted"));
+    };
+
+    window.editTask = (id) => {
+      const task = tasks.find(item => item.id === id);
+      if (!task) return;
+      editingTaskId = id;
+      els.taskTitle.value = task.title;
+      els.taskSubject.value = task.subject;
+      els.taskDue.value = task.due;
+      els.taskImportance.value = String(task.importance);
+      els.taskHours.value = String(task.hours);
+      els.taskProgress.value = Number(task.progress);
+      els.progressValue.textContent = `${Number(task.progress)}%`;
+      els.taskSlot.value = task.slot;
+      selectedColorKey = getSubjectColorKey(task.subject);
+      renderFormState();
+      els.taskTitle.focus();
+      showToast(t("editToast"));
+    };
+
+    els.themeToggleBtn.addEventListener("click", () => {
+      settings.theme = settings.theme === "dark" ? "light" : "dark";
+      saveSettings();
+      updateView();
+    });
+
+    els.languageToggleBtn.addEventListener("click", () => {
+      lang = lang === "ko" ? "en" : "ko";
+      settings.language = lang;
+      saveSettings();
+      updateView();
+    });
+
+    els.taskProgress.addEventListener("input", event => els.progressValue.textContent = `${event.target.value}%`);
+    els.taskSubject.addEventListener("input", renderPalette);
+    els.subjectColorPalette.addEventListener("click", event => {
+      const button = event.target.closest(".palette-btn");
+      if (!button) return;
+      selectedColorKey = button.dataset.colorKey;
+      renderPalette();
+    });
+
+    els.taskForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const title = els.taskTitle.value.trim();
+      const subject = els.taskSubject.value.trim();
+      if (!title || !subject) { showToast(t("titleSubjectRequired")); return; }
+      if (!subjectColors[subject]) subjectColors[subject] = selectedColorKey;
+      const data = normalizeTask({
+        id: editingTaskId || makeId(),
+        title,
+        subject,
+        due: els.taskDue.value,
+        importance: els.taskImportance.value,
+        hours: els.taskHours.value,
+        progress: els.taskProgress.value,
+        slot: els.taskSlot.value
+      });
+      data.done = Number(data.progress) >= 100;
+      if (editingTaskId) {
+        const index = tasks.findIndex(task => task.id === editingTaskId);
+        if (index >= 0) {
+          data.postponed = tasks[index].postponed;
+          if (tasks[index].subject !== data.subject && !subjectColors[data.subject]) subjectColors[data.subject] = selectedColorKey;
+          tasks[index] = data;
+        }
+        showToast(t("updated"));
+      } else {
+        tasks.push(data);
+        showToast(t("added"));
+      }
+      selectedDateKey = data.due;
+      currentMonth = startOfMonthKey(selectedDateKey);
+      saveTasks(); saveSubjectColors(); resetForm(); updateView();
+    });
+
+    els.resetFormBtn.addEventListener("click", resetForm);
+    els.prevDayBtn.addEventListener("click", () => { selectedDateKey = addDaysToKey(selectedDateKey, -1); currentMonth = startOfMonthKey(selectedDateKey); updateView(); });
+    els.nextDayBtn.addEventListener("click", () => { selectedDateKey = addDaysToKey(selectedDateKey, 1); currentMonth = startOfMonthKey(selectedDateKey); updateView(); });
+    els.todayBtn.addEventListener("click", () => { selectedDateKey = todayKey(); currentMonth = startOfMonthKey(selectedDateKey); updateView(); });
+    els.prevMonthBtn.addEventListener("click", () => { currentMonth.setMonth(currentMonth.getMonth() - 1); renderCalendar(); });
+    els.nextMonthBtn.addEventListener("click", () => { currentMonth.setMonth(currentMonth.getMonth() + 1); renderCalendar(); });
+    els.calendarGrid.addEventListener("click", event => {
+      const cell = event.target.closest(".day-cell[data-date]");
+      if (!cell) return;
+      selectedDateKey = cell.dataset.date;
+      currentMonth = startOfMonthKey(selectedDateKey);
+      updateView();
+    });
+    els.subjectBoard.addEventListener("click", event => {
+      const card = event.target.closest(".subject-card");
+      if (!card) return;
+      activeFilter = activeFilter === card.dataset.subject ? "all" : card.dataset.subject;
+      els.subjectFilter.value = activeFilter === "all" ? "all" : activeFilter;
+      $$(".filter-tabs .pill-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.filter === "all" && activeFilter === "all"));
+      updateView();
+    });
+    $$(".filter-tabs .pill-btn").forEach(button => {
+      button.addEventListener("click", event => {
+        $$(".filter-tabs .pill-btn").forEach(btn => btn.classList.remove("active"));
+        event.target.classList.add("active");
+        activeFilter = event.target.dataset.filter;
+        if (["all", "todo", "done", "selected"].includes(activeFilter)) els.subjectFilter.value = "all";
+        updateView();
+      });
+    });
+    els.searchInput.addEventListener("input", renderTaskList);
+    els.subjectFilter.addEventListener("change", event => {
+      activeFilter = event.target.value;
+      $$(".filter-tabs .pill-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.filter === "all" && activeFilter === "all"));
+      updateView();
+    });
+    els.sortMode.addEventListener("change", () => { renderTopThree(); renderTaskList(); renderFocusBlocks(); });
+
+    settings.theme = settings.theme === "dark" ? "dark" : "light";
+    lang = settings.language === "en" ? "en" : "ko";
+    applyStaticText();
+    resetForm();
+    updateView();
+  </script>
+</body>
+</html>
