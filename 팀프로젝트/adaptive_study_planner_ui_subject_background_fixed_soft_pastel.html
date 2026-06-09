@@ -1690,7 +1690,15 @@
       for (let day = 1; day <= lastDay.getDate(); day++) {
         const dateKey = formatDateKey(new Date(year, month, day));
         const dayTasks = tasks.filter(task => task.due === dateKey);
-        const badges = dayTasks.slice(0, 3).map(task => `<span class="mini-badge" style="${subjectChipStyle(task.subject)}">${escapeHtml(task.title)}</span>`).join("");
+        const badges = dayTasks.slice(0, 3).map(task => {
+  const checkIcon = task.done ? `<span style="margin-left: auto; padding-left: 4px; font-weight: 800; color: inherit;">✓</span>` : "";
+  
+  return `
+    <span class="mini-badge" style="${subjectChipStyle(task.subject)} display: inline-flex; align-items: center; width: 100%;">
+      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(task.title)}</span>
+      ${checkIcon}
+    </span>`;
+}).join("");
         const more = dayTasks.length > 3 ? `<span class="mini-badge gray">+${dayTasks.length - 3}</span>` : "";
         html += `
           <button class="day-cell ${dateKey === todayKey() ? "today" : ""} ${dateKey === selectedDateKey ? "selected" : ""}" type="button" data-date="${dateKey}">
